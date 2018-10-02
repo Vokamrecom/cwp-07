@@ -1,67 +1,96 @@
 const http = require('http');
 const fs = require('fs');
-const articleshandlers = require('./handlers/ArticlesHandler');
-const commentshandlers = require('./handlers/CommentsHandler');
-
-//TODO: create logs, rewrite URL in other file, delete all TODO
+const hndl = require('./helpers/handlers');
+const hndl_p = require('./helpers/handlers_public');
+const jsonParser = require('./helpers/jsonParser');
+const Err = require('./helpers/errors').Errors;
+const LOG = require('./helpers/logger').LOG;
+const jsonPath = './content/articles.json';
+const _url = require('url');
 
 const hostname = '127.0.0.1';
 const port = 3000;
 
-const handlers = {
-    '/api/articles/readall': articleshandlers.readall,
-    '/api/articles/read': articleshandlers.read,
-    '/api/articles/update': articleshandlers.update,
-    '/api/articles/create': articleshandlers.createArticle,
-    '/api/articles/delete': articleshandlers.deleteArticle,
-    '/api/comments/create': commentshandlers.createComment,
-    '/api/comments/delete': commentshandlers.deleteComment,
-};
-
+const articles = getJSON(jsonPath);
 
 const server = http.createServer((req, res) => {
-    parseBodyJson(req, (err, payload) => {
-        const handler = getHandler(req.url);
+  
+  jsonParser.parseBodyJson(req, (err, payload, url) => {
+    
+    LOG({"method": req.method, "URL": `${hostname}:${port}${req.url}`, "body": payload});
+    res.setHeader('Content-Type', 'application/json');
+    
+    if(err){
+      sendStatus(res, err);
+    }
+    else{
+      const handler = getHandler(_url.parse(url, true).pathname);
 
-        handler(req, res, payload, (err, result) => {
-            if (err) {
-                res.statusCode = err.code;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify(err));
-                return;
-            }
-
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify(result));
-        });
-    });
+      handler(req, res, payload, articles, (err, result, articles) => {
+        if (err) {
+          sendStatus(res, err);
+          return;
+        }
+  
+        updateJson(articles);
+        res.statusCode = 200;
+        if(res.getHeader('Content-Type') === 'application/json'){
+          if(req.method === "POST"){
+            res.writeHead(301, {Location: '/'});
+          }
+          else{
+            res.write(JSON.stringify(result));
+          }
+        }
+        else{
+          res.write(result);
+        }
+        
+        res.end();
+      });
+    }  
+  });
 });
 
 server.listen(port, hostname, () => {
-    console.log(`Server running at http://${hostname}:${port}/`);
+  checkDirs();
+  console.log(`Server running at http://${hostname}:${port}/`);
 });
 
 function getHandler(url) {
-    return handlers[url] || notFound;
+  if(fs.existsSync(__dirname + '/public' + url))
+    return hndl_p.getFile;
+  return hndl.handlers[url] || hndl.notFound;
 }
 
-
-
-function notFound(req, res, payload, cb) {
-    cb({code: 404, message: 'Not found'});
+function updateJson(content){
+  fs.writeFile(jsonPath, JSON.stringify(content), (err) => {
+    if(err){
+      console.error(err);
+    }
+  })
 }
 
-function parseBodyJson(req, cb) {
-    let body = [];
+function getJSON(path){
+  try{
+    const content = JSON.parse(fs.readFileSync(path, 'utf8'));
+    return content;    
+  }    
+  catch(Error){
+    return [];
+  }
+}
 
-    req.on('data', function (chunk) {
-        body.push(chunk);
-    }).on('end', function () {
-        body = Buffer.concat(body).toString();
+function sendStatus(res, err){
+  if(!err) err = Err[400];
+  res.statusCode = err.code;
+  LOG(err);
+  res.setHeader('Content-Type', 'application/json');
+  res.end( JSON.stringify(err) );
+}
 
-        let params = JSON.parse(body);
-
-        cb(null, params);
-    });
+function checkDirs(){
+  if(!fs.existsSync(`${__dirname}\\content`)){
+    fs.mkdirSync(`${__dirname}\\content`);
+  }
 }

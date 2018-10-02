@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./site.css">
+    <link rel="stylesheet" href="./bootstrap.min.css">    
+    <script src="./jquery-3.2.1.min.js"></script>
+    <script src="./app.js"></script>
+    <title>Articles</title>
+</head>
+<body>
+    <div id="sortOrder"></div>
+    <div class="content">
+        
+        <center>
+            <form method="GET" action="./form.html" id="newArtBttn">
+                <input type="submit" value="Add new article" class="btn btn-primary btn-md">
+            </form>
+        </center>
+        <br/>
+        <div id="articles">
+    </div>
+
+    <div id="pgn">
+        <ul class="pagination">
+            <div id="pagination"/>
+        </ul>
+    </div>
+
+    <script type='text/javascript'>
+        $(function() {
+            getArticles();
+        });
+    </script>
+</body>
+</html>

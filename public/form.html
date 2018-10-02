@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./site.css">
+    <link rel="stylesheet" href="./bootstrap.min.css">    
+    <script src="./jquery-3.2.1.min.js"></script>
+    <script src="form.js"></script>
+    <title>Add article</title>
+</head>
+<body>
+    <form method="POST" action="/api/articles" id='articleForm' class="content">
+        <div class="form-group">
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" required="true" class="form-control" maxlength="50">
+        </div>
+        <div class="form-group">
+            <label for="author">Author:</label>
+            <input type="text" id="author" name="author" required="true" class="form-control" maxlength="50">
+        </div>
+        <div class="form-group">
+            <label for="text">Text:</label>
+            <input type="text" id="text" name="text" required="true" class="form-control" maxlength="256">
+        </div>
+        <center><input type="submit" id="button" class="btn btn-primary btn-md" value="Send"></center>
+    </form>
+</body>
+</html>
